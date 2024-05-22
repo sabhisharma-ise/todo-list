@@ -1,6 +1,7 @@
 
 const express = require('express');
 const mongoose = require('mongoose');
+const _ = require('lodash')
 const date = require(__dirname + '/date.js');
 
 const app = express();
@@ -11,17 +12,26 @@ app.use(express.static(__dirname + '/public'));
 
 mongoose.connect('mongodb://localhost:27017/todolistDB');
 
-// Item Schema
+// Items Schema
 const itemSchema = new mongoose.Schema ({
     name: String
 });
 
-// Item Model
+// Items Model
 const Item = mongoose.model('Item', itemSchema);
+
+// Lists Schema
+const listSchema = new mongoose.Schema ({
+    name: String,
+    items: [itemSchema]
+});
+
+// Lists Model
+const List = mongoose.model('List', listSchema);
 
 app.get('/', function(req, res) {
 
-    let day = date.getDay();
+    let day = date.getDate();
 
     Item.find({}).then(function(items) {
     
@@ -34,67 +44,83 @@ app.get('/', function(req, res) {
 
 });
 
-app.post('/', function(req, res) {
+app.post('/', async function(req, res) {
 
     const itemName = req.body.newItem;
+    const listName = req.body.list;
 
     const item = new Item ({
         name: itemName
     });
 
-    item.save();
+    const day = date.getDate();
 
-    res.redirect('/');
+    if (listName === day) {
+        
+        item.save();
+        res.redirect('/');
+    
+    } else {
 
+        await List.updateOne({name: listName}, {$push: {items: item}});
+        
+        res.redirect('/' + listName);
+
+    }
 });
 
 app.post("/delete", async function(req, res) {
 
+    const listName = req.body.listName;
     const checkedItemId = (req.body.checkbox);
     
-    await Item.findByIdAndDelete(checkedItemId);
+    const day = date.getDate();
 
-    res.redirect('/');
+    if (listName === day) {
+        
+        await Item.findByIdAndDelete(checkedItemId);
+        res.redirect('/');
+    
+    } else {
 
+        await List.findOneAndUpdate({name: listName}, {$pull: {items: {_id: checkedItemId}}});
+            
+        res.redirect('/' + listName);
+    
+    }
 });
 
-app.get('/:list', function(req, res) {
+app.get('/:customListName', function(req, res) {
 
-    const requestedList = req.params.list;
+    const customListName = _.capitalize(_.lowerCase(req.params.customListName));
 
-    const requestedItem = mongoose.model(requestedList + 'Item', itemSchema);
-
-        requestedItem.find({}).then(function(items) {
+    List.findOne({name: customListName}).then(function(foundList) {
         
-            res.render('requestedList', {
-                listTitle: requestedList, 
-                newListItems: items
+        if (!foundList) {
+            // Create a new list
+            const list = new List ({
+                name: customListName,
+                items: []
             });
+            
+            list.save();
+            setTimeout(function() {
+                res.redirect('/' + customListName);
+            }, 100);
 
-        });
-
-    app.post('/'+requestedList, function(req, res) {
-        const itemName = req.body.newItem;
-
-        const item = new requestedItem ({
-            name: itemName
-        });
-
-        item.save();
-
-        res.redirect('/'+requestedList);
+        
+        } else {
+            // Show an existing list
+            List.find({name: customListName}).then(function(customList) {
+                res.render('list', {
+                    listTitle: customListName, 
+                    newListItems: customList[0].items
+                });
+            });
+        }
     });
 
-    app.post('/delete/'+requestedList, async function(req, res) {
-        const checkedItemId = (req.body.checkbox);
-        
-        await requestedItem.findByIdAndDelete(checkedItemId);
-
-        res.redirect('/'+requestedList);
-    })
-
 });
-
 
 app.get("/about", function(req, res) {
     res.render("about");
