@@ -42,7 +42,7 @@ app.get('/', function(req, res) {
 
     Item.find({}).then(function(items) {
     
-        res.render('list', {
+        res.render(__dirname + '/list', {
             listTitle: day, 
             newListItems: items
         });
@@ -119,7 +119,7 @@ app.get('/:customListName', function(req, res) {
         } else {
             // Show an existing list
             List.find({name: customListName}).then(function(customList) {
-                res.render('list', {
+                res.render(__dirname + '/list', {
                     listTitle: customListName, 
                     newListItems: customList[0].items
                 });
