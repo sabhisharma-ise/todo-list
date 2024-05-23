@@ -19,6 +19,9 @@ app.set('view engine', 'ejs');
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(__dirname + '/public'));
 
+app.get('/favicon.ico', (req, res) => res.status(204));
+app.get('/favicon.png', (req, res) => res.status(204));
+
 mongoose.connect(`mongodb+srv://${User}:${Pass}@cluster0.7jeavzk.mongodb.net/${DB}`);
 
 // Items Schema
