@@ -3,14 +3,21 @@ const express = require('express');
 const mongoose = require('mongoose');
 const _ = require('lodash')
 const date = require(__dirname + '/date.js');
+const dotenv = require('dotenv');
 
-const app = express();
+dotenv.config();
+
+const User = process.env.username;
+const Pass = process.env.password;
+const DB = process.env.database;
+
+const app = express();  
 
 app.set('view engine', 'ejs');
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(__dirname + '/public'));
 
-mongoose.connect('mongodb://localhost:27017/todolistDB');
+mongoose.connect(`mongodb+srv://${User}:${Pass}@cluster0.7jeavzk.mongodb.net/${DB}`);
 
 // Items Schema
 const itemSchema = new mongoose.Schema ({
@@ -71,8 +78,8 @@ app.post('/', async function(req, res) {
 
 app.post("/delete", async function(req, res) {
 
-    const listName = req.body.listName;
     const checkedItemId = (req.body.checkbox);
+    const listName = req.body.listName;
     
     const day = date.getDate();
 
@@ -126,6 +133,6 @@ app.get("/about", function(req, res) {
     res.render("about");
 });
 
-app.listen(3000, function() {
+app.listen(process.env.PORT || 3000, function() {
     console.log("Server started on port 3000")
 });
