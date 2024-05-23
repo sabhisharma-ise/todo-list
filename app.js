@@ -13,8 +13,7 @@ const DB = process.env.database;
 
 const app = express();  
 
-const path = require('path');
-app.set('views', path.join(__dirname, 'views'));
+app.set('views', __dirname + '/views');
 
 app.set('view engine', 'ejs');
 app.use(express.urlencoded({ extended: true }));
@@ -45,7 +44,7 @@ app.get('/', function(req, res) {
 
     Item.find({}).then(function(items) {
     
-        res.render('/list', {
+        res.render('list.ejs', {
             listTitle: day, 
             newListItems: items
         });
@@ -122,7 +121,7 @@ app.get('/:customListName', function(req, res) {
         } else {
             // Show an existing list
             List.find({name: customListName}).then(function(customList) {
-                res.render('/list', {
+                res.render('list.ejs', {
                     listTitle: customListName, 
                     newListItems: customList[0].items
                 });
