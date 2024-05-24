@@ -14,7 +14,8 @@
                     <p><%= item.name %></p>
                 </div>
 
-                <input type="hidden" name="listName" value="<%= listTitle %>"></input>
+                <!-- <input type="hidden" name="listName" value="<%= listTitle %>"></input> -->
+                <input type="hidden" name="username" value="<%= username %>">
 
             </form>
 
@@ -23,6 +24,7 @@
         <form class="item" action="/" method="post">
             <input type="text" name="newItem" placeholder="New Item" autocomplete="off">
             <button type="submit" name="list" value ="<%= listTitle%>">+</button>
+            <input type="hidden" name="username" value="<%= username %>">
         </form>
     </div>
 

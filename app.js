@@ -11,7 +11,7 @@ const User = process.env.username;
 const Pass = process.env.password;
 const DB = process.env.database;
 
-const app = express();  
+const app = express();
 
 app.set('views', __dirname + '/views');
 
@@ -25,7 +25,7 @@ app.get('/favicon.png', (req, res) => res.status(204));
 mongoose.connect(`mongodb+srv://${User}:${Pass}@cluster0.7jeavzk.mongodb.net/${DB}`);
 
 // Items Schema
-const itemSchema = new mongoose.Schema ({
+const itemSchema = new mongoose.Schema({
     name: String
 });
 
@@ -33,111 +33,86 @@ const itemSchema = new mongoose.Schema ({
 const Item = mongoose.model('Item', itemSchema);
 
 // Lists Schema
-const listSchema = new mongoose.Schema ({
+const listSchema = new mongoose.Schema({
     name: String,
-    items: [itemSchema]
+    items: [itemSchema],
 });
 
 // Lists Model
 const List = mongoose.model('List', listSchema);
 
-app.get('/', function(req, res) {
+app.get('/', function (req, res) {
+    res.render('username'); // Render a page to input the username
+});
 
+app.post('/getList', function (req, res) {
+    const username = _.capitalize(_.lowerCase(req.body.username));
+    res.redirect('/' + username);
+});
+
+app.get('/:username', function (req, res) {
+
+    const username = _.capitalize(_.lowerCase(req.params.username));
     let day = date.getDate();
 
-    Item.find({}).then(function(items) {
-    
-        res.render('list.ejs', {
-            listTitle: day, 
-            newListItems: items
-        });
-
-    });
-
-});
-
-app.post('/', async function(req, res) {
-
-    const itemName = req.body.newItem;
-    const listName = req.body.list;
-
-    const item = new Item ({
-        name: itemName
-    });
-
-    const day = date.getDate();
-
-    if (listName === day) {
-        
-        item.save();
-        res.redirect('/');
-    
-    } else {
-
-        await List.updateOne({name: listName}, {$push: {items: item}});
-        
-        res.redirect('/' + listName);
-
-    }
-});
-
-app.post("/delete", async function(req, res) {
-
-    const checkedItemId = (req.body.checkbox);
-    const listName = req.body.listName;
-    
-    const day = date.getDate();
-
-    if (listName === day) {
-        
-        await Item.findByIdAndDelete(checkedItemId);
-        res.redirect('/');
-    
-    } else {
-
-        await List.findOneAndUpdate({name: listName}, {$pull: {items: {_id: checkedItemId}}});
-            
-        res.redirect('/' + listName);
-    
-    }
-});
-
-app.get('/:customListName', function(req, res) {
-
-    const customListName = _.capitalize(_.lowerCase(req.params.customListName));
-
-    List.findOne({name: customListName}).then(function(foundList) {
+    List.findOne({ name: username }).then(function (foundList) {
         
         if (!foundList) {
-            // Create a new list
-            const list = new List ({
-                name: customListName,
-                items: []
+            // Create a new list for the user
+            const list = new List({
+                name: username,
+                items: [],
             });
-            
             list.save();
-            setTimeout(function() {
-                res.redirect('/' + customListName);
-            }, 100);
-
-        
+            res.render('list.ejs', {
+                listTitle: day,
+                newListItems: list.items,
+                username: username
+            });
         } else {
-            // Show an existing list
-            List.find({name: customListName}).then(function(customList) {
-                res.render('list.ejs', {
-                    listTitle: customListName, 
-                    newListItems: customList[0].items
-                });
+            // Show the user's existing list
+            res.render('list.ejs', {
+                listTitle: day,
+                newListItems: foundList.items,
+                username: username
             });
         }
     });
+});
+
+app.post('/', async function (req, res) {
+
+    const itemName = req.body.newItem;
+    const username = req.body.username;
+
+    const item = new Item({
+        name: itemName
+    });
+
+    List.findOne({ name: username }).then(function (foundList) {
+        if (foundList) {
+            foundList.items.push(item);
+            foundList.save();
+        }
+        res.redirect('/' + username);
+    });
+});
+
+app.post("/delete", async function (req, res) {
+
+    const checkedItemId = (req.body.checkbox);
+    const username = req.body.username;
+
+    List.findOneAndUpdate({ name: username }, { $pull: { items: { _id: checkedItemId } } }).then(function () {
+        res.redirect('/' + username);
+    });
 
 });
 
-app.get("/about", function(req, res) {
+app.get("/about", function (req, res) {
     res.render("about");
 });
 
-app.listen(process.env.PORT || 3000, function() {
+app.listen(process.env.PORT || 3000, function () {
     console.log("Server started on port 3000")
 });

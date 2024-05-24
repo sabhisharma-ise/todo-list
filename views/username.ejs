@@ -1,0 +1,12 @@
+
+<%- include("header"); -%>
+
+<div class="box">
+    <h1 id="heading">What's your name?</h1>
+    <form class="item" action="/getList" method="post">
+        <input type="text" name="username" placeholder="Enter your username" required>
+        <button type="submit">+</button>
+    </form>
+</div>
+
+<%- include("footer"); -%>
